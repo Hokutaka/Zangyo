@@ -146,4 +146,4 @@ cargo test
 
 ## ライセンス
 
-`Cargo.toml`には`MIT OR Apache-2.0`と記載しています。ただし、現時点ではリポジトリにライセンス本文ファイルを追加していません。配布・再利用時の条件を明確にするため、ライセンス本文の整備が必要です。
+本プロジェクトは **MIT License または Apache License 2.0** のデュアルライセンスです。利用者はいずれかのライセンスを選択できます。詳細は [LICENSE-MIT](LICENSE-MIT) および [LICENSE-APACHE](LICENSE-APACHE) を参照してください。
