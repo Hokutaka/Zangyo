@@ -1,0 +1,9 @@
+[package]
+name = "zangyo"
+version = "0.1.0"
+edition = "2024"
+description = "A programming language where you can't leave work"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+sashimi-assembler = { git = "https://github.com/Cerune-Lang/Sashimi.git", rev = "a6892f214a5450803ad5a03fb6315bcb3e6c5eb2" }
