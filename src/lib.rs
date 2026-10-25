@@ -287,14 +287,6 @@ fn lower(
     Ok(())
 }
 
-fn has_numeric_report(stmts: &[Statement]) -> bool {
-    stmts.iter().any(|s| match s {
-        Statement::ReportNumber { .. } => true,
-        Statement::Overtime { body, .. } => has_numeric_report(body),
-        _ => false,
-    })
-}
-
 fn gather(stmts: &[Statement], out: &mut Vec<(usize, String)>) {
     for stmt in stmts {
         match stmt {
@@ -309,7 +301,6 @@ pub fn compile(source: &str, target: Target) -> Result<Output, Box<dyn Error>> {
     let parsed = parse(source)?;
     let mut slots = BTreeMap::new();
     inspect(&parsed.statements, &mut BTreeSet::new(), &mut slots)?;
-    let has_number_report = has_numeric_report(&parsed.statements);
     let mut program = Program::new(target);
     let main = program.declare("main", Linkage::Global);
     let mut strings = vec![];
@@ -321,12 +312,11 @@ pub fn compile(source: &str, target: Target) -> Result<Output, Box<dyn Error>> {
     let puts = program.declare("puts", Linkage::External);
     let printf = program.declare("printf", Linkage::External);
     let integer_format = program.declare(".Linteger_format", Linkage::Local);
-    if !strings.is_empty() || has_number_report {
+    {
         program.push(EntryKind::Section(Section::ReadOnlyData), Provenance::synthetic());
-        if has_number_report {
-            program.push(EntryKind::Label(integer_format), Provenance::synthetic());
-            program.push(EntryKind::CString("%lld\n".into()), Provenance::synthetic());
-        }
+        // Always define the local format symbol, even for string-only programs.
+        program.push(EntryKind::Label(integer_format), Provenance::synthetic());
+        program.push(EntryKind::CString("%lld\n".into()), Provenance::synthetic());
         for ((line, value), symbol) in strings.iter().zip(reports.iter()) {
             program.push(EntryKind::Label(*symbol), Provenance::source(OriginId(*line as u64)));
             program.push(EntryKind::CString(value.clone()), Provenance::source(OriginId(*line as u64)));
