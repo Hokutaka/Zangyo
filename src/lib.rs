@@ -53,7 +53,7 @@ fn parse_string(s: &str, line: usize) -> Result<String, Issue> {
     let mut iter = inner.chars();
     while let Some(c) = iter.next() {
         if c == '"' {
-            return Err(Issue { line, message: "文字列内の引用符は \\" とエスケープしてください".into() });
+            return Err(Issue { line, message: "文字列内の引用符はエスケープしてください".into() });
         }
         let next = if c == '\\' {
             match iter.next() {
