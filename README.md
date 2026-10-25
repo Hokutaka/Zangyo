@@ -14,6 +14,15 @@ Zangyoは、日本語のキーワードで記述したプログラムをx86-64�
 - Linux x86-64で実行ファイルを作成する場合：Clangと対応するCランタイム・リンカ
 - 初回ビルド時にSashimiのGit依存を取得できる環境
 
+初回はリポジトリをクローンし、作業ディレクトリに移動してください。
+
+```sh
+git clone https://github.com/Hokutaka/Zangyo.git
+cd Zangyo
+cargo build
+cargo test
+```
+
 `examples/hello.zgy`：
 
 ```text
@@ -21,6 +30,8 @@ Zangyoは、日本語のキーワードで記述したプログラムをx86-64�
 報告 "おはようございます"
 定時退社
 ```
+
+### Linux x86-64 / WSL
 
 Linux向けにオブジェクトファイル、アセンブリ、出自情報を生成します。
 
@@ -45,7 +56,51 @@ clang -fPIE -pie target/hello.o -o target/hello
 おはようございます
 ```
 
-Windows向けCOFFは`--target x86_64-pc-windows-msvc`で生成できます。リンクには対応するWindows向けツールチェーンとCランタイムが必要です。
+### Windows x64（PowerShell）
+
+Windowsでは、PowerShellに貼り付けられる1行のコマンドを使います。Bashの行継続記号（バックスラッシュ `\`）はPowerShellでは使えません。PowerShellで複数行に分ける場合、各行末にバッククォート（U+0060）を置き、直後に空白を入れないでください。
+
+リンクにはVisual Studio / Build ToolsのC++開発ツール（Windows SDK、MSVCのライブラリとリンカ）とClangなどのツールチェーンが必要です。必要に応じて「Developer PowerShell for VS」でZangyoのディレクトリを開いてください。
+
+```powershell
+cargo run -- examples/hello.zgy --target x86_64-pc-windows-msvc -o target/hello.obj --asm target/hello.s --origins target/hello.origins.txt
+```
+
+生成される `target/hello.obj` はCOFFオブジェクトファイルであり、単体では実行できません。外部リンカが使える環境では、例えば次のようにリンクします。
+
+```powershell
+clang --target=x86_64-pc-windows-msvc target/hello.obj -o target/hello.exe
+.\target\hello.exe
+```
+
+`clang-cl`（ClangのMSVC互換ドライバ）が使える場合は、次の方法もあります。
+
+```powershell
+clang-cl target\hello.obj /Fe:target\hello.exe
+.\target\hello.exe
+```
+
+実行ファイルのリンクには、Windows SDKと適切なCランタイムの設定が必要です。リンクエラーやツール未検出が発生した場合は「Developer PowerShell for VS」で再試行してください。
+
+#### 日本語出力が文字化けする場合
+
+`報告`の出力文字列はUTF-8です。VS CodeのPowerShellターミナルなどで文字化けするときは、同じターミナル内で次を実行してください。
+
+```powershell
+chcp 65001
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+$OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+.\target\hello.exe
+```
+
+`chcp 65001`だけでは改善しない場合があります。これらの設定は現在のPowerShellセッションに対するものです。
+
+アセンブリと出自情報を確認するには、次のコマンドを実行します。
+
+```powershell
+Get-Content target\hello.s
+Get-Content target\hello.origins.txt
+```
 
 ## 対応する構文
 
@@ -142,7 +197,11 @@ cargo fmt -- --check
 cargo test
 ```
 
+GitHub Actions CIでは、LinuxとWindowsでRustのテストを実行し、LinuxではELFオブジェクトのリンクと実行、WindowsではCOFFオブジェクトの生成を確認する構成です。結果は[Actions](https://github.com/Hokutaka/Zangyo/actions)を参照してください。
+
 テストコードには、基本的なELF/COFF生成、構文エラー、到達不能警告の確認が含まれています。**実際のビルド、テスト通過、リンク後の動作は環境ごとに確認してください。** 生成物が実際に実行可能であることをこれらのテストだけで保証するものではありません。
+
+変更の進め方は[CONTRIBUTING.md](CONTRIBUTING.md)を参照してください。
 
 ## ライセンス
 

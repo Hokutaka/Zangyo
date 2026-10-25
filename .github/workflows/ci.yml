@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Rust and object generation (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Rust unit tests
+        run: cargo test --all-targets
+      - name: Build and run Linux ELF sample
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          cargo run -- examples/hello.zgy --target x86_64-unknown-linux-gnu -o target/hello.o --asm target/hello.s --origins target/hello.origins.txt
+          clang -fPIE -pie target/hello.o -o target/hello
+          test "$(./target/hello)" = "おはようございます"
+          grep -q 'OriginId(2)' target/hello.origins.txt
+      - name: Generate Windows COFF sample
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cargo run -- examples/hello.zgy --target x86_64-pc-windows-msvc -o target/hello.obj --asm target/hello.s --origins target/hello.origins.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (!(Test-Path target/hello.obj)) { throw 'Missing Windows COFF object' }
+          $origins = Get-Content target/hello.origins.txt -Raw
+          if (!$origins.Contains('OriginId(2)')) { throw 'Missing source origin' }
