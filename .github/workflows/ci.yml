@@ -30,6 +30,9 @@ jobs:
           clang -fPIE -pie target/hello.o -o target/hello
           test "$(./target/hello)" = "おはようございます"
           grep -q 'OriginId(2)' target/hello.origins.txt
+          cargo run -- examples/salary.zgy --target x86_64-unknown-linux-gnu -o target/salary.o
+          clang -fPIE -pie target/salary.o -o target/salary
+          test "$(./target/salary)" = "310000"
       - name: Generate Windows COFF sample
         if: runner.os == 'Windows'
         shell: pwsh
@@ -39,3 +42,6 @@ jobs:
           if (!(Test-Path target/hello.obj)) { throw 'Missing Windows COFF object' }
           $origins = Get-Content target/hello.origins.txt -Raw
           if (!$origins.Contains('OriginId(2)')) { throw 'Missing source origin' }
+          cargo run -- examples/salary.zgy --target x86_64-pc-windows-msvc -o target/salary.obj
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (!(Test-Path target/salary.obj)) { throw 'Missing Windows salary object' }
